@@ -1,0 +1,5 @@
+curl -H "Content-Type: application/json" -X GET -d "{'RequestId':'278C48BE-27E4-497B-BFD1-80404FD67C97', 'Query': { 'PropertyName': 'FirstName', 'operator': '==', 'value': 'Vishnu', 'Queries': [ { 'PropertyName': 'Age', 'operator': '==', 'value': '35', 'Junction': 'And', 'Index': '2' }, { 'PropertyName': 'LastName', 'operator': '!=', 'value': 'Vis', 'Junction': 'And', 'Index': '1' } ] }}" https: //localhost:44371/api/values/SearchPerson -i 
+
+
+
+curl -H "Content-Type: application/json" -X GET -d "{'RequestId': '278C48BE-27E4-497B-BFD1-80404FD67C97', 'Query': { 'PropertyName': 'Genres', 'operator': 'stringcontains', 'value': 'Action', 'Queries': [ { 'PropertyName': 'YearOfRelease', 'operator': '>', 'value': '1996', 'Junction': 'AND' } ] } }" https: //localhost:44371/api/Movies/SearchMovies -i
