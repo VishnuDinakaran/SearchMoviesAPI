@@ -6926,11 +6926,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Users\\Vishnu\\Source\\Repos\\WebAPI\\WebApi_Tests\\WebApi_Tests.csproj",
+      "projectUniqueName": "C:\\Users\\Vishnu\\Source\\Repos\\VishnuDinakaran\\SearchMoviesAPI\\WebApi_Tests\\WebApi_Tests.csproj",
       "projectName": "WebApi_Tests",
-      "projectPath": "C:\\Users\\Vishnu\\Source\\Repos\\WebAPI\\WebApi_Tests\\WebApi_Tests.csproj",
+      "projectPath": "C:\\Users\\Vishnu\\Source\\Repos\\VishnuDinakaran\\SearchMoviesAPI\\WebApi_Tests\\WebApi_Tests.csproj",
       "packagesPath": "C:\\Users\\Vishnu\\.nuget\\packages\\",
-      "outputPath": "C:\\Users\\Vishnu\\Source\\Repos\\WebAPI\\WebApi_Tests\\obj\\",
+      "outputPath": "C:\\Users\\Vishnu\\Source\\Repos\\VishnuDinakaran\\SearchMoviesAPI\\WebApi_Tests\\obj\\",
       "projectStyle": "PackageReference",
       "fallbackFolders": [
         "C:\\Program Files\\dotnet\\sdk\\NuGetFallbackFolder"
@@ -6949,8 +6949,8 @@
       "frameworks": {
         "netcoreapp2.2": {
           "projectReferences": {
-            "C:\\Users\\Vishnu\\Source\\Repos\\WebAPI\\WebAPI\\WebAPI.csproj": {
-              "projectPath": "C:\\Users\\Vishnu\\Source\\Repos\\WebAPI\\WebAPI\\WebAPI.csproj"
+            "C:\\Users\\Vishnu\\Source\\Repos\\VishnuDinakaran\\SearchMoviesAPI\\WebAPI\\WebAPI.csproj": {
+              "projectPath": "C:\\Users\\Vishnu\\Source\\Repos\\VishnuDinakaran\\SearchMoviesAPI\\WebAPI\\WebAPI.csproj"
             }
           }
         }

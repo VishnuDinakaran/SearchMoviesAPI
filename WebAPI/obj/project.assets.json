@@ -12418,11 +12418,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Users\\Vishnu\\Source\\Repos\\WebAPI\\WebAPI\\WebAPI.csproj",
+      "projectUniqueName": "C:\\Users\\Vishnu\\Source\\Repos\\VishnuDinakaran\\SearchMoviesAPI\\WebAPI\\WebAPI.csproj",
       "projectName": "WebAPI",
-      "projectPath": "C:\\Users\\Vishnu\\Source\\Repos\\WebAPI\\WebAPI\\WebAPI.csproj",
+      "projectPath": "C:\\Users\\Vishnu\\Source\\Repos\\VishnuDinakaran\\SearchMoviesAPI\\WebAPI\\WebAPI.csproj",
       "packagesPath": "C:\\Users\\Vishnu\\.nuget\\packages\\",
-      "outputPath": "C:\\Users\\Vishnu\\Source\\Repos\\WebAPI\\WebAPI\\obj\\",
+      "outputPath": "C:\\Users\\Vishnu\\Source\\Repos\\VishnuDinakaran\\SearchMoviesAPI\\WebAPI\\obj\\",
       "projectStyle": "PackageReference",
       "fallbackFolders": [
         "C:\\Program Files\\dotnet\\sdk\\NuGetFallbackFolder"

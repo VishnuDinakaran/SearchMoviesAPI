@@ -52,7 +52,7 @@ namespace WebAPI.DAL
 
                 UserRatings.Add(new UserMovieRating { MovieId = 3, MovieTitle = "Rio", UserName = "Tom", UserRatingValue = 4.25 });
                 UserRatings.Add(new UserMovieRating { MovieId = 4, MovieTitle = "The Mummy", UserName = "Tom", UserRatingValue = 4.66 });
-                UserRatings.Add(new UserMovieRating { MovieId = 20, MovieTitle = "Dumbo", UserName = "Tom", UserRatingValue = 4.66 });
+                UserRatings.Add(new UserMovieRating { MovieId = 20, MovieTitle = "Dumbo", UserName = "Tom", UserRatingValue = 4.25 });
                 UserRatings.Add(new UserMovieRating { MovieId = 7, MovieTitle = "Jurassic Park", UserName = "Tom", UserRatingValue = 3.88 });
                 UserRatings.Add(new UserMovieRating { MovieId = 19, MovieTitle = "Zootopia", UserName = "Tom", UserRatingValue = 3.88 });
 

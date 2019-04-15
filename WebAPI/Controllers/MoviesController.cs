@@ -92,6 +92,7 @@ namespace WebAPI.Controllers
                 resultStr.AppendLine(" ");
                 foreach (var item in result)
                 {
+                    item.AverageRating = RoundDouble(item.AverageRating);
                     resultStr.AppendLine(item.ToString());
                 }
             }
@@ -124,6 +125,7 @@ namespace WebAPI.Controllers
                 resultStr.AppendLine(" ");
                 foreach (var item in result)
                 {
+                    item.AverageRating = RoundDouble(item.AverageRating);
                     resultStr.AppendLine(item.ToString());
                 }
             }
@@ -167,6 +169,53 @@ namespace WebAPI.Controllers
                 resultStr.AppendLine(" ");
                 foreach (var item in result)
                 {
+                    item.AverageRating = RoundDouble(item.AverageRating);
+                    resultStr.AppendLine(item.ToString());
+                }
+            }
+            _logger.LogDebug("Top 5 Move by User Avg Rating Result:", resultStr.ToString());
+            return Ok(resultStr.ToString());
+        }
+
+
+        [HttpGet("SearchTop5MoviesByOneUserRating")]
+        public ActionResult<string> SearchTop5MoviesByOneUserRating(SearchRequest request)
+        {
+            if (request == null || request.Query == null || (request.Query.Queries != null && request.Query.Queries.Any(x => string.IsNullOrWhiteSpace(x.Junction))))
+            {
+                _logger.LogError("Bad Search Request", request);
+                return BadRequest("Bad Search Request");
+            }
+            _logger.LogDebug($"Received Request Obj: {request.ToString()}");
+
+            StringBuilder resultStr = new StringBuilder(request.ToString());
+
+            List<UserMovieRating> result = _moviesDbContext.UserRatings.Include(x => x.Movie)
+                .Where(QueryBuilder.GetCompiledFunction<UserMovieRating>(request.Query))
+                .OrderByDescending(x => x.UserRatingValue)
+                .ThenBy(x => x.MovieTitle)
+                .Take(5).ToList();
+
+
+            if (result != null)
+            {
+                if (!result.Any())
+                {
+                    resultStr.AppendLine(" ");
+                    resultStr.AppendLine(" NO MOVIE FOUND. ");
+                    //When no results found return 404 Not Found
+                    _logger.LogDebug("No result found for given search criteria");
+                    return NotFound(resultStr);
+                }
+                else
+                {
+                    resultStr.AppendLine($"Serach Result: Count {result.Count}");
+                }
+
+                resultStr.AppendLine(" ");
+                foreach (var item in result)
+                {
+                    item.UserRatingValue = RoundDouble(item.UserRatingValue);
                     resultStr.AppendLine(item.ToString());
                 }
             }
@@ -229,6 +278,7 @@ namespace WebAPI.Controllers
             return Ok();
         }
 
+        #region Private Methods
         private void UpdateMovieAvgUserRatingOnUserRatingUpdate(UpdateUserRatingRequest updateUserRatingRequest)
         {
             //Get over all Users Rating Avg for the movie
@@ -237,7 +287,7 @@ namespace WebAPI.Controllers
             Movie movie = _moviesDbContext.Movies.FirstOrDefault(x => x.Id == updateUserRatingRequest.UserRating.MovieId);
             movie.AverageRating = movieAvgUserRating;
             _moviesDbContext.Entry(movie).Property("AverageRating").IsModified = true;
-            var movieEntry = _moviesDbContext.Entry(movie);            
+            var movieEntry = _moviesDbContext.Entry(movie);
             foreach (var item in movieEntry.Properties)
             {
                 if (item.Metadata.Name != "AverageRating")
@@ -253,49 +303,12 @@ namespace WebAPI.Controllers
             _moviesDbContext.SaveChanges();
         }
 
-
-        [HttpGet("SearchTop5MoviesByOneUserRating")]
-        public ActionResult<string> SearchTop5MoviesByOneUserRating(SearchRequest request)
+        private double RoundDouble(double val)
         {
-            if (request == null || request.Query == null || (request.Query.Queries != null && request.Query.Queries.Any(x => string.IsNullOrWhiteSpace(x.Junction))))
-            {
-                _logger.LogError("Bad Search Request", request);
-                return BadRequest("Bad Search Request");
-            }
-            _logger.LogDebug($"Received Request Obj: {request.ToString()}");
-
-            StringBuilder resultStr = new StringBuilder(request.ToString());
-
-            List<UserMovieRating> result  = _moviesDbContext.UserRatings.Include(x=> x.Movie)
-                .Where(QueryBuilder.GetCompiledFunction<UserMovieRating>(request.Query))
-                .OrderByDescending(x=> x.UserRatingValue)
-                .ThenBy(x=> x.MovieTitle)
-                .Take(5).ToList();
+            return Math.Round(val, 1);
+        } 
+        #endregion
 
 
-            if (result != null)
-            {
-                if (!result.Any())
-                {
-                    resultStr.AppendLine(" ");
-                    resultStr.AppendLine(" NO MOVIE FOUND. ");
-                    //When no results found return 404 Not Found
-                    _logger.LogDebug("No result found for given search criteria");
-                    return NotFound(resultStr);
-                }
-                else
-                {
-                    resultStr.AppendLine($"Serach Result: Count {result.Count}");
-                }
-
-                resultStr.AppendLine(" ");
-                foreach (var item in result)
-                {
-                    resultStr.AppendLine(item.ToString());
-                }
-            }
-            _logger.LogDebug("Top 5 Move by User Avg Rating Result:", resultStr.ToString());
-            return Ok(resultStr.ToString());
-        }
     }
 }

@@ -12,3 +12,16 @@ C:\Users\Vishnu\Source\Repos\WebAPI\WebAPI\obj\Debug\netcoreapp2.2\WebAPI.RazorT
 C:\Users\Vishnu\Source\Repos\WebAPI\WebAPI\obj\Debug\netcoreapp2.2\WebAPI.dll
 C:\Users\Vishnu\Source\Repos\WebAPI\WebAPI\obj\Debug\netcoreapp2.2\WebAPI.pdb
 C:\Users\Vishnu\Source\Repos\WebAPI\WebAPI\obj\Debug\netcoreapp2.2\WebAPI.csprojAssemblyReference.cache
+C:\Users\Vishnu\Source\Repos\VishnuDinakaran\SearchMoviesAPI\WebAPI\bin\Debug\netcoreapp2.2\WebAPI.deps.json
+C:\Users\Vishnu\Source\Repos\VishnuDinakaran\SearchMoviesAPI\WebAPI\bin\Debug\netcoreapp2.2\WebAPI.runtimeconfig.json
+C:\Users\Vishnu\Source\Repos\VishnuDinakaran\SearchMoviesAPI\WebAPI\bin\Debug\netcoreapp2.2\WebAPI.runtimeconfig.dev.json
+C:\Users\Vishnu\Source\Repos\VishnuDinakaran\SearchMoviesAPI\WebAPI\bin\Debug\netcoreapp2.2\WebAPI.dll
+C:\Users\Vishnu\Source\Repos\VishnuDinakaran\SearchMoviesAPI\WebAPI\bin\Debug\netcoreapp2.2\WebAPI.pdb
+C:\Users\Vishnu\Source\Repos\VishnuDinakaran\SearchMoviesAPI\WebAPI\obj\Debug\netcoreapp2.2\WebAPI.csproj.CoreCompileInputs.cache
+C:\Users\Vishnu\Source\Repos\VishnuDinakaran\SearchMoviesAPI\WebAPI\obj\Debug\netcoreapp2.2\WebAPI.RazorAssemblyInfo.cache
+C:\Users\Vishnu\Source\Repos\VishnuDinakaran\SearchMoviesAPI\WebAPI\obj\Debug\netcoreapp2.2\WebAPI.RazorAssemblyInfo.cs
+C:\Users\Vishnu\Source\Repos\VishnuDinakaran\SearchMoviesAPI\WebAPI\obj\Debug\netcoreapp2.2\WebAPI.AssemblyInfoInputs.cache
+C:\Users\Vishnu\Source\Repos\VishnuDinakaran\SearchMoviesAPI\WebAPI\obj\Debug\netcoreapp2.2\WebAPI.AssemblyInfo.cs
+C:\Users\Vishnu\Source\Repos\VishnuDinakaran\SearchMoviesAPI\WebAPI\obj\Debug\netcoreapp2.2\WebAPI.RazorTargetAssemblyInfo.cache
+C:\Users\Vishnu\Source\Repos\VishnuDinakaran\SearchMoviesAPI\WebAPI\obj\Debug\netcoreapp2.2\WebAPI.dll
+C:\Users\Vishnu\Source\Repos\VishnuDinakaran\SearchMoviesAPI\WebAPI\obj\Debug\netcoreapp2.2\WebAPI.pdb
