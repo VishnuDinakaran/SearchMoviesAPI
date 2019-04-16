@@ -14,7 +14,8 @@ namespace WebAPI.Entities
         [Required]
         public string Title { get; set; }
         public int YearOfRelease { get; set; }
-        public TimeSpan RunningTime { get; set; }
+       
+        public int RunningTime { get; set; }
         public string Genres { get; set; }
         public double AverageRating { get; set; }
 
@@ -22,7 +23,7 @@ namespace WebAPI.Entities
 
         public override string ToString()
         {
-            return $@"{Id} - ""{Title}"" - {YearOfRelease} - ({RunningTime.TotalMinutes})mins - ""{Genres}"" {AverageRating}";
+            return $@"{Id} - ""{Title}"" - {YearOfRelease} - ({RunningTime})mins - ""{Genres}"" {AverageRating}";
         }
     }
 }
