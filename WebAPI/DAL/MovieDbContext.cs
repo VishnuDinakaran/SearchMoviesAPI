@@ -13,20 +13,28 @@ using System.Threading.Tasks;
 using WebAPI.Entities;
 
 namespace WebAPI.DAL
-{
+{    
+    /// <summary>
+    /// DataAccesslayer for Movies data store
+    /// </summary>
     public class MovieDbContext : DbContext
     {
-       
+        #region Data Sets
         public DbSet<Movie> Movies { get; set; }
         public DbSet<UserMovieRating> UserRatings { get; set; }
         public DbSet<User> Users { get; set; }
+        #endregion
 
-
+        #region Constructor
+        /// <summary>
+        /// Construct Movies DbContext
+        /// </summary>
+        /// <param name="options"></param>
         public MovieDbContext(DbContextOptions options) : base(options)
-        {          
+        {
             if (Movies != null && !Movies.Any())
             {
-                Movies.Add(new Movie { Id = 3, Title = "Rio", YearOfRelease = 2011, Genres = "Animated" , AverageRating = 3.768 });
+                Movies.Add(new Movie { Id = 3, Title = "Rio", YearOfRelease = 2011, Genres = "Animated", AverageRating = 3.768 });
                 Movies.Add(new Movie { Id = 4, Title = "The Mummy", YearOfRelease = 1999, Genres = "Fantasy/Adventure", AverageRating = 4.768 });
                 Movies.Add(new Movie { Id = 5, Title = "Rio2", YearOfRelease = 2014, Genres = "Animated", AverageRating = 3.768 });
                 Movies.Add(new Movie { Id = 6, Title = "The Mummy Returns", YearOfRelease = 2001, Genres = "Fantasy", AverageRating = 3.68 });
@@ -43,12 +51,12 @@ namespace WebAPI.DAL
                 Movies.Add(new Movie { Id = 17, Title = "Who Am I?", YearOfRelease = 1998, Genres = "Action, Adventure, Comedy", AverageRating = 3.28 });
                 Movies.Add(new Movie { Id = 18, Title = "Captain America: The First Avenger", YearOfRelease = 1998, Genres = "Action, Adventure, Sci-Fi", AverageRating = 4.768 });
                 Movies.Add(new Movie { Id = 19, Title = "Zootopia", YearOfRelease = 2016, Genres = "Animation, Adventure, Comedy", AverageRating = 3.48 });
-                Movies.Add(new Movie { Id = 20, Title = "Dumbo", YearOfRelease = 2019, RunningTime = new TimeSpan(1,52,0), Genres = "Adventure, Family, Fantasy", AverageRating = 3.48 });
+                Movies.Add(new Movie { Id = 20, Title = "Dumbo", YearOfRelease = 2019, RunningTime = new TimeSpan(1, 52, 0), Genres = "Adventure, Family, Fantasy", AverageRating = 3.48 });
 
 
-                UserRatings.Add(new UserMovieRating {  MovieId = 3, MovieTitle = "Rio", UserName = "John", UserRatingValue = 3.25 });
-                UserRatings.Add(new UserMovieRating {  MovieId = 4, MovieTitle = "The Mummy", UserName = "John", UserRatingValue = 4.66 });
-                UserRatings.Add(new UserMovieRating {  MovieId = 7, MovieTitle = "Jurassic Park", UserName = "John", UserRatingValue = 4.88 });
+                UserRatings.Add(new UserMovieRating { MovieId = 3, MovieTitle = "Rio", UserName = "John", UserRatingValue = 3.25 });
+                UserRatings.Add(new UserMovieRating { MovieId = 4, MovieTitle = "The Mummy", UserName = "John", UserRatingValue = 4.66 });
+                UserRatings.Add(new UserMovieRating { MovieId = 7, MovieTitle = "Jurassic Park", UserName = "John", UserRatingValue = 4.88 });
 
                 UserRatings.Add(new UserMovieRating { MovieId = 3, MovieTitle = "Rio", UserName = "Tom", UserRatingValue = 4.25 });
                 UserRatings.Add(new UserMovieRating { MovieId = 4, MovieTitle = "The Mummy", UserName = "Tom", UserRatingValue = 4.66 });
@@ -57,51 +65,32 @@ namespace WebAPI.DAL
                 UserRatings.Add(new UserMovieRating { MovieId = 19, MovieTitle = "Zootopia", UserName = "Tom", UserRatingValue = 3.88 });
 
                 Users.Add(new User { Name = "John" });
-                Users.Add(new User { Name = "Tom" }); 
-                SaveChanges(); 
-            }         
+                Users.Add(new User { Name = "Tom" });
+                SaveChanges();
+            }
         }
 
-        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-        {
-            base.OnConfiguring(optionsBuilder);
-            //if (!optionsBuilder.IsConfigured)
-            //{
-            //    optionsBuilder.UseSqlServer(connectionString);
-            //}
-        }
+        #endregion
 
-
+        #region OnModelCreating 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+            //Set composit key for UsrMoveRating
             modelBuilder.Entity<UserMovieRating>()
             .HasKey(u => new { u.MovieId, u.UserName });
 
-
+            //Set relationship
             modelBuilder.Entity<UserMovieRating>()
             .HasOne(u => u.Movie)
             .WithMany(m => m.UserRatings);
 
             modelBuilder.Entity<UserMovieRating>()
             .HasOne(u => u.User)
-            .WithMany(u=> u.MovieRatings);
+            .WithMany(u => u.MovieRatings);
 
             base.OnModelCreating(modelBuilder);
-        }
+        } 
+        #endregion
 
-
-        public void InsertOrUpdate(UserMovieRating entity)
-        {
-            var rowsAffected = Database.ExecuteSqlCommand($"UPDATE UserRating SET UserRatingValue = {entity.UserRatingValue} WHERE MovieId = {entity.MovieId} and UserName = '{entity.UserName}'");
-            if (rowsAffected == 0)
-            {
-                //execute insert
-            }
-            // If an immediate save is needed, can be slow though
-            // if iterating through many entities:
-            SaveChanges();
-        }
     }
-
-
 }

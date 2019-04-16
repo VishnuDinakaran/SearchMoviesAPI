@@ -19,15 +19,34 @@ namespace WebAPI.Controllers
     [ApiController]
     public class MoviesController : Controller
     {
+        #region Private read-only properties
         private readonly MovieDbContext _moviesDbContext;
         private readonly ILogger<MoviesController> _logger;
+        #endregion
 
+        #region Constructor
+        /// <summary>
+        /// Construct new MoviesController
+        /// </summary>
+        /// <param name="moviesDbContext"></param>
+        /// <param name="loggerFactory"></param>
         public MoviesController(MovieDbContext moviesDbContext, ILoggerFactory loggerFactory)
         {
+            if (moviesDbContext == null)
+            {
+                throw new ArgumentNullException(nameof(moviesDbContext));
+            }
+            if (loggerFactory == null)
+            {
+                throw new ArgumentNullException(nameof(loggerFactory));
+            }
             _moviesDbContext = moviesDbContext;
             _logger = loggerFactory.CreateLogger<MoviesController>();
             _logger.LogDebug("Constructed new instance on MoviesController");
         }
+        #endregion
+
+        #region GET methods- Search Movies, UserRating etc
         // GET api/moviess
         [HttpGet]
         public ActionResult<string> Get()
@@ -43,7 +62,7 @@ namespace WebAPI.Controllers
             stringBuilder.AppendLine(" ");
             stringBuilder.AppendLine("(API B) - SearchTop5MoviesByUserAverageRating");
             stringBuilder.AppendLine(@"                curl -H ""Content-Type: application/json"" -X GET -d ""{ 'RequestId': '278C48BE-27E4-497B-BFD1-80404FD67C97', 'Query': { 'PropertyName': 'Genres', 'operator': 'stringcontains', 'value': 'Action', 'Queries': [ { 'PropertyName': 'YearOfRelease', 'operator': '>', 'value': '1993', 'Junction': 'AND' } ] } }"" https://localhost:44371/api/Movies/SearchTop5MoviesByUserAverageRating -i");
-            
+
             stringBuilder.AppendLine(" ");
             stringBuilder.AppendLine("(API C) - SearchTop5MoviesByOneUserRating");
             stringBuilder.AppendLine(@"                curl - H ""Content-Type: application/json"" - X GET - d ""{ 'RequestId': '278C48BE-27E4-497B-BFD1-80404FD67C97', 'Query': { 'PropertyName': 'UserName', 'operator': '==', 'value': 'Tom' } }"" https://localhost:44371/api/Movies/SearchTop5MoviesByOneUserRating -i");
@@ -68,12 +87,12 @@ namespace WebAPI.Controllers
             }
             _logger.LogDebug($"Received Request Obj: {request.ToString()}");
 
-            StringBuilder resultStr = new StringBuilder(request.ToString());
-
+            //Search Database
             var result = _moviesDbContext.Movies
                 .Where(QueryBuilder.GetCompiledFunction<Movie>(request.Query))
                 .OrderBy(x => x.Title).ToList();
 
+            StringBuilder resultStr = new StringBuilder(request.ToString());
             if (result != null)
             {
                 if (!result.Any())
@@ -100,39 +119,6 @@ namespace WebAPI.Controllers
             return Ok(resultStr.ToString());
         }
 
-        [HttpGet("Top5MoviesByUserRating")]
-        public ActionResult<string> Top5MoviesByUserRating()
-        {
-            StringBuilder resultStr = new StringBuilder();
-
-            List<Movie> result = _moviesDbContext.Movies.OrderByDescending(x => x.AverageRating).ThenBy(x=> x.Title).Take(5).ToList();
-
-            if (result != null)
-            {
-                if (!result.Any())
-                {
-                    resultStr.AppendLine(" ");
-                    resultStr.AppendLine(" NO MOVIE FOUND. ");
-                    //When no results found return 404 Not Found
-                    _logger.LogDebug("No result found for given search criteria");
-                    return NotFound(resultStr);
-                }
-                else
-                {
-                    resultStr.AppendLine($"Serach Result: Count {result.Count}");
-                }
-
-                resultStr.AppendLine(" ");
-                foreach (var item in result)
-                {
-                    item.AverageRating = RoundDouble(item.AverageRating);
-                    resultStr.AppendLine(item.ToString());
-                }
-            }
-            _logger.LogDebug("Top 5 Move by User Avg Rating Result:", resultStr.ToString());
-            return Ok(resultStr.ToString());
-        }
-
         [HttpGet("SearchTop5MoviesByUserAverageRating")]
         public ActionResult<string> SearchTop5MoviesByUserAverageRating(SearchRequest request)
         {
@@ -144,7 +130,7 @@ namespace WebAPI.Controllers
             _logger.LogDebug($"Received Request Obj: {request.ToString()}");
 
             StringBuilder resultStr = new StringBuilder(request.ToString());
-            
+
             List<Movie> result = _moviesDbContext.Movies
                 .Where(QueryBuilder.GetCompiledFunction<Movie>(request.Query))
                 .OrderByDescending(x => x.AverageRating)
@@ -176,7 +162,6 @@ namespace WebAPI.Controllers
             _logger.LogDebug("Top 5 Move by User Avg Rating Result:", resultStr.ToString());
             return Ok(resultStr.ToString());
         }
-
 
         [HttpGet("SearchTop5MoviesByOneUserRating")]
         public ActionResult<string> SearchTop5MoviesByOneUserRating(SearchRequest request)
@@ -223,6 +208,41 @@ namespace WebAPI.Controllers
             return Ok(resultStr.ToString());
         }
 
+        [HttpGet("Top5MoviesByUserRating")]
+        public ActionResult<string> Top5MoviesByUserRating()
+        {
+            StringBuilder resultStr = new StringBuilder();
+
+            List<Movie> result = _moviesDbContext.Movies.OrderByDescending(x => x.AverageRating).ThenBy(x => x.Title).Take(5).ToList();
+
+            if (result != null)
+            {
+                if (!result.Any())
+                {
+                    resultStr.AppendLine(" ");
+                    resultStr.AppendLine(" NO MOVIE FOUND. ");
+                    //When no results found return 404 Not Found
+                    _logger.LogDebug("No result found for given search criteria");
+                    return NotFound(resultStr);
+                }
+                else
+                {
+                    resultStr.AppendLine($"Serach Result: Count {result.Count}");
+                }
+
+                resultStr.AppendLine(" ");
+                foreach (var item in result)
+                {
+                    item.AverageRating = RoundDouble(item.AverageRating);
+                    resultStr.AppendLine(item.ToString());
+                }
+            }
+            _logger.LogDebug("Top 5 Move by User Avg Rating Result:", resultStr.ToString());
+            return Ok(resultStr.ToString());
+        } 
+        #endregion
+
+        #region PUT method to update user rating
         [HttpPut("UpdateUserRating")]
         public ActionResult<string> UpdateUserRating(UpdateUserRatingRequest updateUserRatingRequest)
         {
@@ -276,7 +296,8 @@ namespace WebAPI.Controllers
             _logger.LogDebug($"Saved User Rating for User:{updateUserRatingRequest.UserRating.UserName} and movie:{updateUserRatingRequest.UserRating.MovieTitle}");
 
             return Ok();
-        }
+        } 
+        #endregion
 
         #region Private Methods
         private void UpdateMovieAvgUserRatingOnUserRatingUpdate(UpdateUserRatingRequest updateUserRatingRequest)
@@ -308,7 +329,6 @@ namespace WebAPI.Controllers
             return Math.Round(val, 1);
         } 
         #endregion
-
 
     }
 }

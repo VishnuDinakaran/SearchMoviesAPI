@@ -29,7 +29,7 @@ namespace WebAPI.Controllers
             Expression rootExpression = BuildDynamicExpression(query, parameterExpression);
             if (query.Queries != null && query.Queries.Any())
             {
-                IOrderedEnumerable<Query> queries = query.Queries.OrderBy(x => x.Id);
+                IOrderedEnumerable<Query> queries = query.Queries.OrderBy(x => x.Index);
                 foreach (Query item in queries)
                 {
                     if (!string.IsNullOrWhiteSpace(item.Junction))
