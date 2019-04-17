@@ -25,6 +25,10 @@ namespace WebAPI.Controllers
         private static List<string> _queryPropertyNames = new List<string>();
         #endregion
 
+        #region Private constans
+        const string BadSearchReqErrorMessage = "Bad Search Request received. Please verify query obj.";
+        #endregion
+
         #region Constructor
         /// <summary>
         /// Construct new MoviesController
@@ -82,161 +86,209 @@ namespace WebAPI.Controllers
         [HttpGet("SearchMovies")]
         public ActionResult<IEnumerable<IMovie>> SearchMovies(SearchRequest request)
         {
-            if (!IsSearchRequestValid(request))
+            try
             {
-                _logger.LogError("Bad Search Request", request);
-                return BadRequest("Bad Search Request");
-            }
-            _logger.LogDebug($"Received Request Obj: {request.ToString()}");
-
-            StringBuilder resultStr = new StringBuilder(request.ToString());
-            //Search Database          
-            List<IMovie> result = _movieDAL.Movies
-               .Where(QueryBuilder.GetCompiledFunction<Movie>(request.Query))
-               .OrderBy(x => x.Title)
-               .Select<IMovie, IMovie>(SelectMovie(resultStr))
-               .ToList();
-
-            if (result != null)
-            {
-                if (!result.Any())
+                if (!IsSearchRequestValid(request))
                 {
+                    _logger.LogError(BadSearchReqErrorMessage, request);
+                    return BadRequest(BadSearchReqErrorMessage);
+                }
+                _logger.LogDebug($"Received Request Obj: {request.ToString()}");
+
+                StringBuilder resultStr = new StringBuilder(request.ToString());
+                //Search Database          
+                List<IMovie> result = _movieDAL.Movies
+                   .Where(QueryBuilder.GetCompiledFunction<Movie>(request.Query))
+                   .OrderBy(x => x.Title)
+                   .Select<IMovie, IMovie>(SelectMovie(resultStr))
+                   .ToList();
+
+                if (result != null)
+                {
+                    if (!result.Any())
+                    {
+                        resultStr.AppendLine(" ");
+                        resultStr.AppendLine(" NO MOVIE FOUND. ");
+                        //When no results found return 404 Not Found
+                        _logger.LogDebug("No result found for given search criteria");
+                        return NotFound(resultStr);
+                    }
+                    else
+                    {
+                        resultStr.AppendLine($"Serach Result: Count {result.Count}");
+                    }
+
                     resultStr.AppendLine(" ");
-                    resultStr.AppendLine(" NO MOVIE FOUND. ");
-                    //When no results found return 404 Not Found
-                    _logger.LogDebug("No result found for given search criteria");
-                    return NotFound(resultStr);
-                }
-                else
-                {
-                    resultStr.AppendLine($"Serach Result: Count {result.Count}");
                 }
 
-                resultStr.AppendLine(" ");
+                _logger.LogDebug("Search Result:", resultStr.ToString());
+                return Ok(result);
             }
-
-            _logger.LogDebug("Search Result:", resultStr.ToString());
-            return Ok(result);
+            catch (Exception ex)
+            {
+                _logger.LogError($"ERROR in SearchMovies: {ex}");
+                var result = new ObjectResult("Error processing request. Internal Server error.")
+                {
+                    StatusCode = (int)Microsoft.AspNetCore.Http.StatusCodes.Status500InternalServerError
+                };
+                return result;
+            }
         }
 
 
         [HttpGet("SearchTop5MoviesByUserAverageRating")]
         public ActionResult<Movie> SearchTop5MoviesByUserAverageRating(SearchRequest request)
         {
-            if (!IsSearchRequestValid(request))
+            try
             {
-                _logger.LogError("Bad Search Request", request);
-                return BadRequest("Bad Search Request");
+                if (!IsSearchRequestValid(request))
+                {
+                    _logger.LogError(BadSearchReqErrorMessage, request);
+                    return BadRequest(BadSearchReqErrorMessage);
+                }
+                _logger.LogDebug($"Received Request Obj: {request.ToString()}");
+
+                StringBuilder resultStr = new StringBuilder(request.ToString());
+
+                List<IMovie> result = _movieDAL.Movies
+                    .Where(QueryBuilder.GetCompiledFunction<Movie>(request.Query))
+                    .OrderByDescending(x => x.AverageRating)
+                    .ThenBy(x => x.Title)
+                    .Take(5)
+                    .Select(SelectMovie(resultStr))
+                    .ToList();
+
+                if (result != null)
+                {
+                    if (!result.Any())
+                    {
+                        resultStr.AppendLine(" ");
+                        resultStr.AppendLine(" NO MOVIE FOUND. ");
+                        //When no results found return 404 Not Found
+                        _logger.LogDebug("No result found for given search criteria");
+                        return NotFound(resultStr);
+                    }
+                    else
+                    {
+                        resultStr.AppendLine($"Serach Result: Count {result.Count}");
+                    }
+
+
+                }
+                _logger.LogDebug("Top 5 Move by User Avg Rating Result:", resultStr.ToString());
+                return Ok(result);
             }
-            _logger.LogDebug($"Received Request Obj: {request.ToString()}");
-
-            StringBuilder resultStr = new StringBuilder(request.ToString());
-
-            List<IMovie> result = _movieDAL.Movies
-                .Where(QueryBuilder.GetCompiledFunction<Movie>(request.Query))
-                .OrderByDescending(x => x.AverageRating)
-                .ThenBy(x => x.Title)
-                .Take(5)
-                .Select(SelectMovie(resultStr))
-                .ToList();
-
-            if (result != null)
+            catch (Exception ex)
             {
-                if (!result.Any())
+                _logger.LogError($"ERROR in SearchTop5MoviesByUserAverageRating: {ex}");
+                var result = new ObjectResult("Error processing request. Internal Server error.")
                 {
-                    resultStr.AppendLine(" ");
-                    resultStr.AppendLine(" NO MOVIE FOUND. ");
-                    //When no results found return 404 Not Found
-                    _logger.LogDebug("No result found for given search criteria");
-                    return NotFound(resultStr);
-                }
-                else
-                {
-                    resultStr.AppendLine($"Serach Result: Count {result.Count}");
-                }
-
-
+                    StatusCode = (int)Microsoft.AspNetCore.Http.StatusCodes.Status500InternalServerError
+                };
+                return result;
             }
-            _logger.LogDebug("Top 5 Move by User Avg Rating Result:", resultStr.ToString());
-            return Ok(result);
         }
 
         [HttpGet("SearchTop5MoviesByOneUserRating")]
         public ActionResult<IEnumerable<IUserMovieRating>> SearchTop5MoviesByOneUserRating(SearchRequest request)
         {
-            if (!IsSearchRequestValid(request))
+            try
             {
-                _logger.LogError("Bad Search Request", request);
-                return BadRequest("Bad Search Request");
-            }
-            _logger.LogDebug($"Received Request Obj: {request.ToString()}");
-
-            StringBuilder resultStr = new StringBuilder(request.ToString());
-
-            List<IUserMovieRating> result = _movieDAL.UserRatings.Include(x => x.Movie)
-                .Where(QueryBuilder.GetCompiledFunction<UserMovieRating>(request.Query))
-                .OrderByDescending(x => x.UserRatingValue)
-                .ThenBy(x => x.MovieTitle)
-                .Take(5)
-                .Select(SelectUserMovieRating(resultStr))
-                .ToList();
-
-
-            if (result != null)
-            {
-                if (!result.Any())
+                if (!IsSearchRequestValid(request))
                 {
+                    _logger.LogError(BadSearchReqErrorMessage, request);
+                    return BadRequest(BadSearchReqErrorMessage);
+                }
+                _logger.LogDebug($"Received Request Obj: {request.ToString()}");
+
+                StringBuilder resultStr = new StringBuilder(request.ToString());
+
+                List<IUserMovieRating> result = _movieDAL.UserRatings.Include(x => x.Movie)
+                    .Where(QueryBuilder.GetCompiledFunction<UserMovieRating>(request.Query))
+                    .OrderByDescending(x => x.UserRatingValue)
+                    .ThenBy(x => x.MovieTitle)
+                    .Take(5)
+                    .Select(SelectUserMovieRating(resultStr))
+                    .ToList();
+
+
+                if (result != null)
+                {
+                    if (!result.Any())
+                    {
+                        resultStr.AppendLine(" ");
+                        resultStr.AppendLine(" NO MOVIE FOUND. ");
+                        //When no results found return 404 Not Found
+                        _logger.LogDebug("No result found for given search criteria");
+                        return NotFound(resultStr);
+                    }
+                    else
+                    {
+                        resultStr.AppendLine($"Serach Result: Count {result.Count}");
+                    }
+
                     resultStr.AppendLine(" ");
-                    resultStr.AppendLine(" NO MOVIE FOUND. ");
-                    //When no results found return 404 Not Found
-                    _logger.LogDebug("No result found for given search criteria");
-                    return NotFound(resultStr);
+                    foreach (var item in result)
+                    {
+                        item.UserRatingValue = RoundDouble(item.UserRatingValue);
+                        resultStr.AppendLine(item.ToString());
+                    }
                 }
-                else
-                {
-                    resultStr.AppendLine($"Serach Result: Count {result.Count}");
-                }
-
-                resultStr.AppendLine(" ");
-                foreach (var item in result)
-                {
-                    item.UserRatingValue = RoundDouble(item.UserRatingValue);
-                    resultStr.AppendLine(item.ToString());
-                }
+                _logger.LogDebug("Top 5 Move by User Avg Rating Result:", resultStr.ToString());
+                return Ok(result);
             }
-            _logger.LogDebug("Top 5 Move by User Avg Rating Result:", resultStr.ToString());
-            return Ok(result);
+            catch (Exception ex)
+            {
+                _logger.LogError($"ERROR in SearchTop5MoviesByOneUserRating: {ex}");
+                var result = new ObjectResult("Error processing request. Internal Server error.")
+                {
+                    StatusCode = (int)Microsoft.AspNetCore.Http.StatusCodes.Status500InternalServerError
+                };
+                return result;
+            }
         }
 
         [HttpGet("Top5MoviesByUserRating")]
         public ActionResult<IEnumerable<IMovie>> Top5MoviesByUserRating()
         {
-            StringBuilder resultStr = new StringBuilder();
-
-            List<IMovie> result = _movieDAL.Movies
-                .OrderByDescending(x => x.AverageRating)
-                .ThenBy(x => x.Title)
-                .Take(5)
-                .Select<IMovie, IMovie>(SelectMovie(resultStr))
-                .ToList();
-
-            if (result != null)
+            try
             {
-                if (!result.Any())
+                StringBuilder resultStr = new StringBuilder();
+
+                List<IMovie> result = _movieDAL.Movies
+                    .OrderByDescending(x => x.AverageRating)
+                    .ThenBy(x => x.Title)
+                    .Take(5)
+                    .Select<IMovie, IMovie>(SelectMovie(resultStr))
+                    .ToList();
+
+                if (result != null)
                 {
-                    resultStr.AppendLine(" ");
-                    resultStr.AppendLine(" NO MOVIE FOUND. ");
-                    //When no results found return 404 Not Found
-                    _logger.LogDebug("No result found for given search criteria");
-                    return NotFound(resultStr);
+                    if (!result.Any())
+                    {
+                        resultStr.AppendLine(" ");
+                        resultStr.AppendLine(" NO MOVIE FOUND. ");
+                        //When no results found return 404 Not Found
+                        _logger.LogDebug("No result found for given search criteria");
+                        return NotFound(resultStr);
+                    }
+                    else
+                    {
+                        resultStr.AppendLine($"Serach Result: Count {result.Count}");
+                    }
                 }
-                else
-                {
-                    resultStr.AppendLine($"Serach Result: Count {result.Count}");
-                }
+                _logger.LogDebug("Top 5 Move by User Avg Rating Result:", resultStr.ToString());
+                return Ok(result);
             }
-            _logger.LogDebug("Top 5 Move by User Avg Rating Result:", resultStr.ToString());
-            return Ok(result);
+            catch (Exception ex)
+            {
+                _logger.LogError($"ERROR in Top5MoviesByUserRating: {ex}");
+                var result = new ObjectResult("Error processing request. Internal Server error.")
+                {
+                    StatusCode = (int)Microsoft.AspNetCore.Http.StatusCodes.Status500InternalServerError
+                };
+                return result;
+            }
         }
         #endregion
 
@@ -244,58 +296,70 @@ namespace WebAPI.Controllers
         [HttpPut("UpdateUserRating")]
         public ActionResult<string> UpdateUserRating(UpdateUserRatingRequest updateUserRatingRequest)
         {
-            if (updateUserRatingRequest == null || updateUserRatingRequest.UserRating == null)
+            try
             {
-                _logger.LogDebug("Bad Request received in UpdateUserRating");
-                return BadRequest();
-            }
-
-            bool updateMovieAvg = false;
-            //EntityEntry<UserMovieRating> entityEntry = null;
-            //If the UserRating exist for a move by a existing user, just update it
-            if (_movieDAL.UserRatings.Any(x => updateUserRatingRequest.UserRating.MovieId == x.MovieId && updateUserRatingRequest.UserRating.UserName == x.UserName))
-            {
-                _logger.LogDebug($"Found User Rating for User:{updateUserRatingRequest.UserRating.UserName} and movie:{updateUserRatingRequest.UserRating.MovieTitle}");
-                //entityEntry = _movieDAL.UserRatings.Update(updateUserRatingRequest.UserRating);
-                _movieDAL.UpdateUserRatings(updateUserRatingRequest.UserRating);
-                updateMovieAvg = true;
-            }
-            else
-            {
-                //check and find if the Move exist
-                if (!_movieDAL.Movies.Any(x => x.Id == updateUserRatingRequest.UserRating.MovieId))
+                if (updateUserRatingRequest == null || updateUserRatingRequest.UserRating == null)
                 {
-                    //404 not found
-                    _logger.LogDebug($"Movie:{updateUserRatingRequest.UserRating.MovieTitle}, NOT FOUND");
-                    return NotFound($"Movie not found. id:{updateUserRatingRequest.UserRating.MovieId}, Title:{updateUserRatingRequest.UserRating.MovieTitle}");
+                    _logger.LogDebug("Bad Request received in UpdateUserRating");
+                    return BadRequest("Bad Request received in UpdateUserRating");
                 }
-                else if (!_movieDAL.Users.Any(u => u.Name == updateUserRatingRequest.UserRating.UserName))
+
+                bool updateMovieAvg = false;
+                //EntityEntry<UserMovieRating> entityEntry = null;
+                //If the UserRating exist for a move by a existing user, just update it
+                if (_movieDAL.UserRatings.Any(x => updateUserRatingRequest.UserRating.MovieId == x.MovieId && updateUserRatingRequest.UserRating.UserName == x.UserName))
                 {
-                    //404 not found
-                    _logger.LogDebug($"User:{ updateUserRatingRequest.UserRating.UserName} , NOT FOUND");
-                    return NotFound($"User not found. UserName:{updateUserRatingRequest.UserRating.UserName}");
+                    _logger.LogDebug($"Found User Rating for User:{updateUserRatingRequest.UserRating.UserName} and movie:{updateUserRatingRequest.UserRating.MovieTitle}");
+                    //entityEntry = _movieDAL.UserRatings.Update(updateUserRatingRequest.UserRating);
+                    _movieDAL.UpdateUserRatings(updateUserRatingRequest.UserRating);
+                    updateMovieAvg = true;
                 }
                 else
                 {
-                    _logger.LogDebug($"Inserting new User Rating for User:{updateUserRatingRequest.UserRating.UserName} and movie:{updateUserRatingRequest.UserRating.MovieTitle}");
-                    //entityEntry = _movieDAL.UserRatings.Add(updateUserRatingRequest.UserRating);
-                    _movieDAL.AddUserRatings(updateUserRatingRequest.UserRating);
-                    updateMovieAvg = true;
+                    //check and find if the Move exist
+                    if (!_movieDAL.Movies.Any(x => x.Id == updateUserRatingRequest.UserRating.MovieId))
+                    {
+                        //404 not found
+                        _logger.LogDebug($"Movie:{updateUserRatingRequest.UserRating.MovieTitle}, NOT FOUND");
+                        return NotFound($"Movie not found. id:{updateUserRatingRequest.UserRating.MovieId}, Title:{updateUserRatingRequest.UserRating.MovieTitle}");
+                    }
+                    else if (!_movieDAL.Users.Any(u => u.Name == updateUserRatingRequest.UserRating.UserName))
+                    {
+                        //404 not found
+                        _logger.LogDebug($"User:{ updateUserRatingRequest.UserRating.UserName} , NOT FOUND");
+                        return NotFound($"User not found. UserName:{updateUserRatingRequest.UserRating.UserName}");
+                    }
+                    else
+                    {
+                        _logger.LogDebug($"Inserting new User Rating for User:{updateUserRatingRequest.UserRating.UserName} and movie:{updateUserRatingRequest.UserRating.MovieTitle}");
+                        //entityEntry = _movieDAL.UserRatings.Add(updateUserRatingRequest.UserRating);
+                        _movieDAL.AddUserRatings(updateUserRatingRequest.UserRating);
+                        updateMovieAvg = true;
+                    }
                 }
-            }
-            //Saving
-            _movieDAL.SaveChanges();
+                //Saving
+                _movieDAL.SaveChanges();
 
-            //reaches this line since all data sets are availabe
-            //Update Movie avg user rating
-            if (updateMovieAvg)
+                //reaches this line since all data sets are availabe
+                //Update Movie avg user rating
+                if (updateMovieAvg)
+                {
+                    UpdateMovieAvgUserRatingOnUserRatingUpdate(updateUserRatingRequest);
+                }
+
+                _logger.LogDebug($"Saved User Rating for User:{updateUserRatingRequest.UserRating.UserName} and movie:{updateUserRatingRequest.UserRating.MovieTitle}");
+
+                return Ok();
+            }
+            catch (Exception ex)
             {
-                UpdateMovieAvgUserRatingOnUserRatingUpdate(updateUserRatingRequest);
+                _logger.LogError($"ERROR in UpdateUserRating: {ex}");
+                var result = new ObjectResult("Error processing request. Internal Server error.")
+                {
+                    StatusCode = (int)Microsoft.AspNetCore.Http.StatusCodes.Status500InternalServerError
+                };
+                return result;
             }
-
-            _logger.LogDebug($"Saved User Rating for User:{updateUserRatingRequest.UserRating.UserName} and movie:{updateUserRatingRequest.UserRating.MovieTitle}");
-
-            return Ok();
         }
         #endregion
 

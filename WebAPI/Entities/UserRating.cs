@@ -24,7 +24,7 @@ namespace WebAPI.Entities
         [Required]
         public string UserName { get; set; }
 
-        [Range(1, 5)]
+        [Range(0, 5)]
         public double UserRatingValue { get; set; }
 
         [ForeignKey("UserName")]

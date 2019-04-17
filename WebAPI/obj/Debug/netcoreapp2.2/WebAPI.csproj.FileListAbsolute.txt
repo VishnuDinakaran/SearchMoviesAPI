@@ -25,3 +25,4 @@ C:\Users\Vishnu\Source\Repos\VishnuDinakaran\SearchMoviesAPI\WebAPI\obj\Debug\ne
 C:\Users\Vishnu\Source\Repos\VishnuDinakaran\SearchMoviesAPI\WebAPI\obj\Debug\netcoreapp2.2\WebAPI.RazorTargetAssemblyInfo.cache
 C:\Users\Vishnu\Source\Repos\VishnuDinakaran\SearchMoviesAPI\WebAPI\obj\Debug\netcoreapp2.2\WebAPI.dll
 C:\Users\Vishnu\Source\Repos\VishnuDinakaran\SearchMoviesAPI\WebAPI\obj\Debug\netcoreapp2.2\WebAPI.pdb
+C:\Users\Vishnu\Source\Repos\VishnuDinakaran\SearchMoviesAPI\WebAPI\obj\Debug\netcoreapp2.2\WebAPI.csprojAssemblyReference.cache
