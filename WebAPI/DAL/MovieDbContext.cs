@@ -18,6 +18,7 @@ namespace WebAPI.DAL
     /// </summary>
     public class MovieDbContext : DbContext
     {
+        private static object _lock = new object();
         #region Data Sets
         public DbSet<Movie> Movies { get; set; }
         public DbSet<UserMovieRating> UserRatings { get; set; }
@@ -32,12 +33,15 @@ namespace WebAPI.DAL
         public MovieDbContext(DbContextOptions options) 
             : base(options)
         {
-            if (Movies != null && !Movies.Any())
+            lock (_lock)
             {
-                Movies.AddRange(TestData.Movies);
-                Users.AddRange(TestData.Users);
-                UserRatings.AddRange(TestData.UserMovieRatings);
-                SaveChanges();
+                if (Movies != null && !Movies.Any())
+                {
+                    Movies.AddRange(TestData.Movies);
+                    Users.AddRange(TestData.Users);
+                    UserRatings.AddRange(TestData.UserMovieRatings);
+                    SaveChanges();
+                } 
             }
         }
 

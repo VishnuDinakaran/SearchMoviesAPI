@@ -22,6 +22,7 @@ namespace WebAPI.Controllers
         #region Private read-only properties        
         private readonly ILogger<MoviesController> _logger;
         readonly IMovieDAL _movieDAL;
+        private static List<string> _queryPropertyNames = new List<string>();
         #endregion
 
         #region Constructor
@@ -81,7 +82,7 @@ namespace WebAPI.Controllers
         [HttpGet("SearchMovies")]
         public ActionResult<IEnumerable<IMovie>> SearchMovies(SearchRequest request)
         {
-            if (request == null || request.Query == null || (request.Query.Queries != null && request.Query.Queries.Any(x => string.IsNullOrWhiteSpace(x.Junction))))
+            if (!IsSearchRequestValid(request))
             {
                 _logger.LogError("Bad Search Request", request);
                 return BadRequest("Bad Search Request");
@@ -118,10 +119,11 @@ namespace WebAPI.Controllers
             return Ok(result);
         }
 
+
         [HttpGet("SearchTop5MoviesByUserAverageRating")]
         public ActionResult<Movie> SearchTop5MoviesByUserAverageRating(SearchRequest request)
         {
-            if (request == null || request.Query == null || (request.Query.Queries != null && request.Query.Queries.Any(x => string.IsNullOrWhiteSpace(x.Junction))))
+            if (!IsSearchRequestValid(request))
             {
                 _logger.LogError("Bad Search Request", request);
                 return BadRequest("Bad Search Request");
@@ -158,11 +160,11 @@ namespace WebAPI.Controllers
             _logger.LogDebug("Top 5 Move by User Avg Rating Result:", resultStr.ToString());
             return Ok(result);
         }
-        
+
         [HttpGet("SearchTop5MoviesByOneUserRating")]
         public ActionResult<IEnumerable<IUserMovieRating>> SearchTop5MoviesByOneUserRating(SearchRequest request)
         {
-            if (request == null || request.Query == null || (request.Query.Queries != null && request.Query.Queries.Any(x => string.IsNullOrWhiteSpace(x.Junction))))
+            if (!IsSearchRequestValid(request))
             {
                 _logger.LogError("Bad Search Request", request);
                 return BadRequest("Bad Search Request");
@@ -205,7 +207,7 @@ namespace WebAPI.Controllers
             _logger.LogDebug("Top 5 Move by User Avg Rating Result:", resultStr.ToString());
             return Ok(result);
         }
-        
+
         [HttpGet("Top5MoviesByUserRating")]
         public ActionResult<IEnumerable<IMovie>> Top5MoviesByUserRating()
         {
@@ -344,6 +346,38 @@ namespace WebAPI.Controllers
         private double RoundDouble(double val)
         {
             return Math.Round(val, 1);
+        }
+
+        private bool IsSearchRequestValid(SearchRequest request)
+        {
+            lock (_queryPropertyNames)
+            {
+                if (!_queryPropertyNames.Any())
+                {
+                    _queryPropertyNames.AddRange(typeof(MovieSummay).GetProperties().Select(x => x.Name));
+                    _queryPropertyNames.AddRange(typeof(User).GetProperties().Select(x => x.Name));
+                    _queryPropertyNames.AddRange(typeof(UserMovieRating).GetProperties().Select(x => x.Name));
+                }
+            }
+
+            return ModelState.IsValid && request != null && request.Query != null
+                //|| (request.Query.Queries != null && request.Query.Queries.Any(x => string.IsNullOrWhiteSpace(x.Junction)))
+                && IsQueryValid(request.Query);
+        }
+
+        List<string> _queryOperators = new List<string> { "==", "!=", "Equals", "NOTEQUALS", "<", "LESSTHAN", "<=", "LESSTHANOREQUAL", ">", "GREATERTHAN", ">=", "GREATERTHANOREQUAL", "STRINGCONTAINS" };
+
+        public bool IsQueryValid(Query query)
+        {
+            bool result = _queryPropertyNames.Any(x => string.Compare(x, query.PropertyName) == 0)
+                && _queryOperators.Any(x => string.Compare(query.Operator, x, true) == 0);
+
+            if (result && query.Queries != null)
+            {
+                result = !query.Queries.Any(x => string.IsNullOrWhiteSpace(x.Junction) || (IsQueryValid(x) == false));
+            }
+
+            return result;
         }
         #endregion
     }

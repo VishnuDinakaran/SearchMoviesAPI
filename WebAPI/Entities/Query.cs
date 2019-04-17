@@ -18,6 +18,8 @@ namespace WebAPI.Entities
 
         /// <summary>
         /// C# Type's Property Name
+        /// PropertyName is case sensitive 
+        /// Please provide exact property name as in C# type
         /// eg: Movie's Title or YearOfRelease or RunningTime
         /// </summary>
         [Required]
