@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace WebAPI.Entities
 {
-    public class UserMovieRating
+    public class UserMovieRating : IUserMovieRating
     {
         //[Key]
         //public int Id { get; set; }
@@ -24,7 +24,7 @@ namespace WebAPI.Entities
         [Required]
         public string UserName { get; set; }
 
-        [Range(1,5)]
+        [Range(1, 5)]
         public double UserRatingValue { get; set; }
 
         [ForeignKey("UserName")]

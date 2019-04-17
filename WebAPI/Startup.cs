@@ -30,6 +30,7 @@ namespace WebAPI
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_2);
+            services.AddScoped<IMovieDAL, MoviesDataAccesslayer>();
            
             //services.AddMvc();
             services.AddDbContext<MovieDbContext>(options =>

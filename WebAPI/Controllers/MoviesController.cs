@@ -19,9 +19,9 @@ namespace WebAPI.Controllers
     [ApiController]
     public class MoviesController : Controller
     {
-        #region Private read-only properties
-        private readonly MovieDbContext _moviesDbContext;
+        #region Private read-only properties        
         private readonly ILogger<MoviesController> _logger;
+        readonly IMovieDAL _movieDAL;
         #endregion
 
         #region Constructor
@@ -30,24 +30,25 @@ namespace WebAPI.Controllers
         /// </summary>
         /// <param name="moviesDbContext"></param>
         /// <param name="loggerFactory"></param>
-        public MoviesController(MovieDbContext moviesDbContext, ILoggerFactory loggerFactory)
+        public MoviesController(ILoggerFactory loggerFactory, IMovieDAL movieDAL)
         {
-            if (moviesDbContext == null)
-            {
-                throw new ArgumentNullException(nameof(moviesDbContext));
-            }
             if (loggerFactory == null)
             {
                 throw new ArgumentNullException(nameof(loggerFactory));
             }
-            _moviesDbContext = moviesDbContext;
+            if (movieDAL == null)
+            {
+                throw new ArgumentNullException(nameof(movieDAL));
+            }
+
             _logger = loggerFactory.CreateLogger<MoviesController>();
             _logger.LogDebug("Constructed new instance on MoviesController");
+            _movieDAL = movieDAL;
         }
         #endregion
 
         #region GET methods- Search Movies, UserRating etc
-        // GET api/moviess
+        // GET api/movies
         [HttpGet]
         public ActionResult<string> Get()
         {
@@ -78,7 +79,7 @@ namespace WebAPI.Controllers
         }
 
         [HttpGet("SearchMovies")]
-        public ActionResult<IEnumerable<Movie>> SearchMovies(SearchRequest request)
+        public ActionResult<IEnumerable<IMovie>> SearchMovies(SearchRequest request)
         {
             if (request == null || request.Query == null || (request.Query.Queries != null && request.Query.Queries.Any(x => string.IsNullOrWhiteSpace(x.Junction))))
             {
@@ -88,14 +89,13 @@ namespace WebAPI.Controllers
             _logger.LogDebug($"Received Request Obj: {request.ToString()}");
 
             StringBuilder resultStr = new StringBuilder(request.ToString());
+            //Search Database          
+            List<IMovie> result = _movieDAL.Movies
+               .Where(QueryBuilder.GetCompiledFunction<Movie>(request.Query))
+               .OrderBy(x => x.Title)
+               .Select<IMovie, IMovie>(SelectMovie(resultStr))
+               .ToList();
 
-            //Search Database
-            List<Movie> result = _moviesDbContext.Movies
-                .Where(QueryBuilder.GetCompiledFunction<Movie>(request.Query))
-                .OrderBy(x => x.Title)
-                .Select<Movie, Movie>(SelectMovie(resultStr))
-                .ToList();
-            
             if (result != null)
             {
                 if (!result.Any())
@@ -112,8 +112,8 @@ namespace WebAPI.Controllers
                 }
 
                 resultStr.AppendLine(" ");
-               
             }
+
             _logger.LogDebug("Search Result:", resultStr.ToString());
             return Ok(result);
         }
@@ -130,7 +130,7 @@ namespace WebAPI.Controllers
 
             StringBuilder resultStr = new StringBuilder(request.ToString());
 
-            List<Movie> result = _moviesDbContext.Movies
+            List<IMovie> result = _movieDAL.Movies
                 .Where(QueryBuilder.GetCompiledFunction<Movie>(request.Query))
                 .OrderByDescending(x => x.AverageRating)
                 .ThenBy(x => x.Title)
@@ -158,10 +158,9 @@ namespace WebAPI.Controllers
             _logger.LogDebug("Top 5 Move by User Avg Rating Result:", resultStr.ToString());
             return Ok(result);
         }
-
-
+        
         [HttpGet("SearchTop5MoviesByOneUserRating")]
-        public ActionResult<IEnumerable<UserMovieRating>> SearchTop5MoviesByOneUserRating(SearchRequest request)
+        public ActionResult<IEnumerable<IUserMovieRating>> SearchTop5MoviesByOneUserRating(SearchRequest request)
         {
             if (request == null || request.Query == null || (request.Query.Queries != null && request.Query.Queries.Any(x => string.IsNullOrWhiteSpace(x.Junction))))
             {
@@ -172,11 +171,12 @@ namespace WebAPI.Controllers
 
             StringBuilder resultStr = new StringBuilder(request.ToString());
 
-            List<UserMovieRating> result = _moviesDbContext.UserRatings.Include(x => x.Movie)
+            List<IUserMovieRating> result = _movieDAL.UserRatings.Include(x => x.Movie)
                 .Where(QueryBuilder.GetCompiledFunction<UserMovieRating>(request.Query))
                 .OrderByDescending(x => x.UserRatingValue)
                 .ThenBy(x => x.MovieTitle)
                 .Take(5)
+                .Select(SelectUserMovieRating(resultStr))
                 .ToList();
 
 
@@ -205,17 +205,17 @@ namespace WebAPI.Controllers
             _logger.LogDebug("Top 5 Move by User Avg Rating Result:", resultStr.ToString());
             return Ok(result);
         }
-
+        
         [HttpGet("Top5MoviesByUserRating")]
-        public ActionResult<IEnumerable<Movie>> Top5MoviesByUserRating()
+        public ActionResult<IEnumerable<IMovie>> Top5MoviesByUserRating()
         {
             StringBuilder resultStr = new StringBuilder();
 
-            List<Movie> result = _moviesDbContext.Movies
+            List<IMovie> result = _movieDAL.Movies
                 .OrderByDescending(x => x.AverageRating)
                 .ThenBy(x => x.Title)
                 .Take(5)
-                .Select<Movie, Movie>(SelectMovie(resultStr))
+                .Select<IMovie, IMovie>(SelectMovie(resultStr))
                 .ToList();
 
             if (result != null)
@@ -235,7 +235,7 @@ namespace WebAPI.Controllers
             }
             _logger.LogDebug("Top 5 Move by User Avg Rating Result:", resultStr.ToString());
             return Ok(result);
-        } 
+        }
         #endregion
 
         #region PUT method to update user rating
@@ -249,24 +249,25 @@ namespace WebAPI.Controllers
             }
 
             bool updateMovieAvg = false;
-            EntityEntry<UserMovieRating> entityEntry = null;
+            //EntityEntry<UserMovieRating> entityEntry = null;
             //If the UserRating exist for a move by a existing user, just update it
-            if (_moviesDbContext.UserRatings.Any(x => updateUserRatingRequest.UserRating.MovieId == x.MovieId && updateUserRatingRequest.UserRating.UserName == x.UserName))
+            if (_movieDAL.UserRatings.Any(x => updateUserRatingRequest.UserRating.MovieId == x.MovieId && updateUserRatingRequest.UserRating.UserName == x.UserName))
             {
                 _logger.LogDebug($"Found User Rating for User:{updateUserRatingRequest.UserRating.UserName} and movie:{updateUserRatingRequest.UserRating.MovieTitle}");
-                entityEntry = _moviesDbContext.UserRatings.Update(updateUserRatingRequest.UserRating);
+                //entityEntry = _movieDAL.UserRatings.Update(updateUserRatingRequest.UserRating);
+                _movieDAL.UpdateUserRatings(updateUserRatingRequest.UserRating);
                 updateMovieAvg = true;
             }
             else
             {
                 //check and find if the Move exist
-                if (!_moviesDbContext.Movies.Any(x => x.Id == updateUserRatingRequest.UserRating.MovieId))
+                if (!_movieDAL.Movies.Any(x => x.Id == updateUserRatingRequest.UserRating.MovieId))
                 {
                     //404 not found
                     _logger.LogDebug($"Movie:{updateUserRatingRequest.UserRating.MovieTitle}, NOT FOUND");
                     return NotFound($"Movie not found. id:{updateUserRatingRequest.UserRating.MovieId}, Title:{updateUserRatingRequest.UserRating.MovieTitle}");
                 }
-                else if (!_moviesDbContext.Users.Any(u => u.Name == updateUserRatingRequest.UserRating.UserName))
+                else if (!_movieDAL.Users.Any(u => u.Name == updateUserRatingRequest.UserRating.UserName))
                 {
                     //404 not found
                     _logger.LogDebug($"User:{ updateUserRatingRequest.UserRating.UserName} , NOT FOUND");
@@ -275,12 +276,13 @@ namespace WebAPI.Controllers
                 else
                 {
                     _logger.LogDebug($"Inserting new User Rating for User:{updateUserRatingRequest.UserRating.UserName} and movie:{updateUserRatingRequest.UserRating.MovieTitle}");
-                    entityEntry = _moviesDbContext.UserRatings.Add(updateUserRatingRequest.UserRating);
+                    //entityEntry = _movieDAL.UserRatings.Add(updateUserRatingRequest.UserRating);
+                    _movieDAL.AddUserRatings(updateUserRatingRequest.UserRating);
                     updateMovieAvg = true;
                 }
             }
             //Saving
-            _moviesDbContext.SaveChanges();
+            _movieDAL.SaveChanges();
 
             //reaches this line since all data sets are availabe
             //Update Movie avg user rating
@@ -296,12 +298,12 @@ namespace WebAPI.Controllers
         #endregion
 
         #region Private Methods
-        private Func<Movie, Movie> SelectMovie(StringBuilder resultStr)
+        private Func<IMovie, IMovie> SelectMovie(StringBuilder resultStr)
         {
             return (x) =>
             {
                 resultStr?.AppendLine(x.ToString());
-                return new Movie
+                return new MovieSummay
                 {
                     Id = x.Id,
                     Title = x.Title,
@@ -313,35 +315,36 @@ namespace WebAPI.Controllers
             };
         }
 
+        private Func<IUserMovieRating, IUserMovieRating> SelectUserMovieRating(StringBuilder resultStr)
+        {
+            return (x) =>
+            {
+                resultStr?.AppendLine(x.ToString());
+                return new UserMovieRatingSummary
+                {
+                    UserName = x.UserName,
+                    MovieId = x.MovieId,
+                    MovieTitle = x.MovieTitle,
+                    UserRatingValue = RoundDouble(x.UserRatingValue)
+                };
+            };
+        }
+
+
         private void UpdateMovieAvgUserRatingOnUserRatingUpdate(UpdateUserRatingRequest updateUserRatingRequest)
         {
             //Get over all Users Rating Avg for the movie
-            double movieAvgUserRating = _moviesDbContext.UserRatings.Where(x => x.MovieId == updateUserRatingRequest.UserRating.MovieId).Average(x => x.UserRatingValue);
+            double movieAvgUserRating = _movieDAL.UserRatings.Where(x => x.MovieId == updateUserRatingRequest.UserRating.MovieId).Average(x => x.UserRatingValue);
             //Get Movie to update the AvgUserRating field with new value
-            Movie movie = _moviesDbContext.Movies.FirstOrDefault(x => x.Id == updateUserRatingRequest.UserRating.MovieId);
-            movie.AverageRating = movieAvgUserRating;
-            _moviesDbContext.Entry(movie).Property("AverageRating").IsModified = true;
-            var movieEntry = _moviesDbContext.Entry(movie);
-            foreach (var item in movieEntry.Properties)
-            {
-                if (item.Metadata.Name != "AverageRating")
-                {
-                    item.IsModified = false;
-                }
-                else
-                {
-                    item.IsModified = true;
-                }
-            }
-            //movieEntry.State = Microsoft.EntityFrameworkCore.EntityState.Modified;
-            _moviesDbContext.SaveChanges();
+            Movie movie = _movieDAL.Movies.FirstOrDefault(x => x.Id == updateUserRatingRequest.UserRating.MovieId);
+            //Update  movieAvgUserRating and save
+            _movieDAL.UpdateMovieAvgUserRaing(movie, movieAvgUserRating);
         }
 
         private double RoundDouble(double val)
         {
             return Math.Round(val, 1);
-        } 
+        }
         #endregion
-
     }
 }
